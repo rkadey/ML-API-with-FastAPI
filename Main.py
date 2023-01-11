@@ -14,7 +14,7 @@ app = FastAPI(title ='Credit Card Churn Prediction', version = 1.0, description 
 
 class model_input(BaseModel):
     Customer_Age : int
-    Gender : int
+    Gender : str
     Dependent_count : int
     Education_level : int
     Marital_status : str
@@ -44,19 +44,20 @@ model = joblib.load("joblib_CC_Model.pkl")
 @app.post("/credit_card_churn_prediction")
 async def predicts(input:model_input):
     # Numeric Features
-    num_features = [[input.Customer_Age, input.Dependent_count, input.months_on_book, input.Total_Relationship_Count, input.Months_Inactive_12_mon, 
-                   input.Contacts_Count_12_mon, input.Credit_Limit, input.Total_Revolving_Bal, input.Avg_Open_To_Buy, input.Total_Amt_Chng_Q4_Q1, input.Total_Trans_Amt, 
-                   input.Total_Trans_Ct, input.Total_Ct_Chng_Q4_Q1, input.Avg_Utilization_Ratio, input.Gender, input.Education_level]]
+    num_features = [["Customer_Age", "Dependent_count", "months_on_book", "Total_Relationship_Count", "Months_Inactive_12_mon", 
+                   "Contacts_Count_12_mon", "Credit_Limit", "Total_Revolving_Bal", "Avg_Open_To_Buy","Total_Amt_Chng_Q4_Q1","Total_Trans_Amt", 
+                   "Total_Trans_Ct", "Total_Ct_Chng_Q4_Q1", "Avg_Utilization_Ratio"]]
     num_pipeline = Pipeline([("Scaler", StandardScaler())])
     
     # Categorical Features
-    cat_features = [[input.Gender, input.Education_level, input.Marital_status, input.Card_category]]
+    cat_features = [["Gender", "Education_level", "Marital_status", "Card_category"]]
     cat_pipeline = Pipeline([("onehot", OneHotEncoder())])
 
     predict_input = ColumnTransformer(transformers = [("numeric_preprocessing", num_pipeline, num_features),
                                        ("categorical_preprocessing", cat_pipeline, cat_features)])
-
-    final_input = np.array(predict_input.fit_transform([[model_input]]), dtype = np.str)
+    #print(model_input)
+    df = pd.DataFrame([input])
+    final_input = np.array(predict_input.fit_transform(df), dtype = np.str)
 
     prediction = model.predict(np.array([[final_input]]).reshape(1, 1))
     return prediction
